@@ -136,16 +136,8 @@ def train_one_epoch_with_aux(model: torch.nn.Module,original_model: torch.nn.Mod
 
     s = old_num_k
 
-    # lr_scheduler = optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=5, eta_min=0.001)
-    # lr_scheduler = optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=20, eta_min=0.0005)
-    lr_scheduler = optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=args.lrcos_tmax, eta_min=args.lrcos_etamin)
-
-    # Freezing previous tasks' filters
-    for name, param in model.named_parameters():
-        if name.find('e_prompt.v_conv_vals') >=0  or name.find('e_prompt.k_conv_vals') >=0:
-            for i in range(s):
-                if name.find('.{}.weight'.format(i)) >=0 or name.find('.{}.bias'.format(i)) >=0:
-                    param.requires_grad = False
+    
+    #This part is intentionally left blank and will be updated upon acceptance
 
 
     if args.distributed and utils.get_world_size() > 1:
@@ -201,44 +193,10 @@ def train_one_epoch_with_aux(model: torch.nn.Module,original_model: torch.nn.Mod
         # Masking and computing loss
         known_classes = task_id*len(class_mask[0])
         cur_targets = torch.where(target-known_classes>=0,target-known_classes,-100)
-        loss += criterion(logits[:, known_classes:], cur_targets) # base criterion (CrossEntropyLoss)
+        loss = criterion(logits[:, known_classes:], cur_targets) # base criterion (CrossEntropyLoss)
         
 
-        if loss < args.loss_thres:
-            reduce_lr = True
-
-        #generalization matrix
-        feat1 = F.normalize(cls_features)
-        feat2 = F.normalize(pre_logits)
-        GM =  torch.matmul(feat1.t(), feat2)/logits.shape[0]
-        # GM =  torch.matmul(cls_features.t(), pre_logits)/logits.shape[0]
-        # GM = F.normalize(GM)
-
-        GMdiag = torch.diagonal(GM)
-        Ldiag =  torch.square(torch.torch.ones_like(GMdiag)-GMdiag).mean()
-
-        NonD = GM - (torch.matmul(GM,torch.eye(GM.shape[0]).to(device, non_blocking=True)))
-        Lrdn = torch.sum(torch.square(NonD))/(GM.shape[0]*(GM.shape[0]-1))
-        Lgen =  Ldiag + Lrdn
-
-        loss += (Ldiag + Lrdn) * 0.1
-
-        # loss += Ldiag * 0.1
-
-
-        if args.pull_constraint and 'reduce_sim' in output:
-            loss = loss - args.pull_constraint_coeff * output['reduce_sim']
-
-        if args.pull_constraint and 'reduce_sim2' in output:
-            loss = loss + args.pull_constraint_coeff2 * output['reduce_sim2']
-
-        # loss2 = 0
-        # if args.pull_constraint and 'reduce_sim2' in output:
-        #     if args.dualopt:
-        #         loss2 = -1 * args.pull_constraint_coeff2 * output['reduce_sim2']
-        #     else:
-        #         loss = loss - args.pull_constraint_coeff2 * output['reduce_sim2']
-        #     # print("Similarity : ", output['reduce_sim'].item(), " Similarity 2 : ", output['reduce_sim2'].item())
+      	#This part is intentionally left blank and will be updated upon acceptance
 
         acc1, acc5 = accuracy(logits, target, topk=(1, 5))
 
@@ -267,10 +225,9 @@ def train_one_epoch_with_aux(model: torch.nn.Module,original_model: torch.nn.Mod
         metric_logger.meters['Acc@1'].update(acc1.item(), n=input.shape[0])
         metric_logger.meters['Acc@5'].update(acc5.item(), n=input.shape[0])
 
-        # if n_iter > 25:
-        # if n_iter > 5:
-        if reduce_lr:
-            lr_scheduler.step()
+	
+	
+      	#This part is intentionally left blank and will be updated upon acceptance
         
         n_iter = n_iter + 1
         # break
